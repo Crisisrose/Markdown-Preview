@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown Preview</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        .markdown-body h1 {
+            font-size: 2em;
+            font-weight: bold;
+            border-bottom: 1px solid #d1d5db;
+            padding-bottom: 0.3em;
+            margin-bottom: 16px;
+        }
+
+        .markdown-body h2 {
+            font-size: 1.5em;
+            font-weight: bold;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 0.3em;
+            margin-top: 24px;
+            margin-bottom: 16px;
+        }
+
+        .markdown-body h3 {
+            font-size: 1.25em;
+            font-weight: bold;
+            margin-top: 24px;
+            margin-bottom: 16px;
+        }
+
+        .markdown-body h4 {
+            font-size: 1em;
+            font-weight: bold;
+            margin-top: 24px;
+            margin-bottom: 16px;
+        }
+
+        .markdown-body p {
+            margin-bottom: 16px;
+            line-height: 1.6;
+        }
+
+        .markdown-body hr {
+            border: none;
+            border-top: 2px solid #d1d5db;
+            margin: 24px 0;
+        }
+
+        .markdown-body ul {
+            list-style: disc;
+            padding-left: 2em;
+            margin-bottom: 16px;
+        }
+
+        .markdown-body ol {
+            list-style: decimal;
+            padding-left: 2em;
+            margin-bottom: 16px;
+        }
+
+        .markdown-body li {
+            margin-bottom: 4px;
+            line-height: 1.6;
+        }
+
+        .markdown-body code {
+            background: #f3f4f6;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: #1e293b;
+        }
+
+        .markdown-body pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 16px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin-bottom: 16px;
+        }
+
+        .markdown-body pre code {
+            background: none;
+            padding: 0;
+            color: inherit;
+        }
+
+        .markdown-body strong {
+            font-weight: 700;
+        }
+
+        .markdown-body blockquote {
+            border-left: 4px solid #d1d5db;
+            padding-left: 16px;
+            color: #6b7280;
+            margin-bottom: 16px;
+        }
+
+        .markdown-body a {
+            color: #60a5fa;
+            text-decoration: underline;
+        }
+
+        .markdown-body img {
+            max-width: 100%;
+        }
+
+        .markdown-body table {
+            border-collapse: collapse;
+            margin-bottom: 16px;
+            width: 100%;
+        }
+
+        .markdown-body th,
+        .markdown-body td {
+            border: 1px solid #374151;
+            padding: 8px 12px;
+        }
+
+        .markdown-body th {
+            background: #1e293b;
+            font-weight: 600;
+        }
+
+        #editor {
+            background: #0f172a;
+            color: #86efac;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            resize: none;
+            outline: none;
+            border: none;
+            tab-size: 4;
+        }
+
+        #editor::placeholder {
+            color: #4b5563;
+        }
+
+        /* Custom scrollbar */
+        #editor::-webkit-scrollbar,
+        #preview-panel::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #editor::-webkit-scrollbar-track,
+        #preview-panel::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        #editor::-webkit-scrollbar-thumb,
+        #preview-panel::-webkit-scrollbar-thumb {
+            background: #374151;
+            border-radius: 4px;
+        }
+
+        #editor::-webkit-scrollbar-thumb:hover,
+        #preview-panel::-webkit-scrollbar-thumb:hover {
+            background: #4b5563;
+        }
+
+        /* Divider drag handle */
+        .divider {
+            width: 6px;
+            cursor: col-resize;
+            background: #1e293b;
+            transition: background 0.2s;
+            flex-shrink: 0;
+        }
+
+        .divider:hover,
+        .divider.active {
+            background: #3b82f6;
+        }
+
+        /* Settings dialog animation */
+        .settings-dialog {
+            animation: settingsFadeIn 0.15s ease-out;
+        }
+
+        @keyframes settingsFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-4px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-950 text-gray-100 h-screen flex flex-col overflow-hidden">
+    <!-- Header -->
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-800 flex-shrink-0">
+        <h1 class="text-2xl font-bold text-white flex items-center gap-2">
+            <svg class="w-7 h-7 text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path
+                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+            Markdown Preview
+        </h1>
+        <div class="flex items-center gap-3">
+            <button id="clearBtn" onclick="clearEditor()"
+                class="bg-gray-700 hover:bg-gray-600 text-gray-300 font-semibold px-4 py-2 rounded-lg transition cursor-pointer flex items-center gap-2 text-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Clear
+            </button>
+            <button id="copyBtn" onclick="copyMarkdown()"
+                class="bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-2 rounded-lg transition cursor-pointer flex items-center gap-2 text-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path
+                        d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                Copy Markdown
+            </button>
+            <!-- Settings -->
+            <div class="relative">
+                <button id="settingsBtn" onclick="toggleSettings()"
+                    class="text-gray-400 hover:text-white transition cursor-pointer p-2 rounded-lg hover:bg-gray-800">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path
+                            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <circle cx="12" cy="12" r="3" />
+                    </svg>
+                </button>
+                <!-- Settings dialog -->
+                <div id="settingsDialog"
+                    class="hidden settings-dialog absolute right-0 top-12 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl p-5 z-50 w-72">
+                    <div class="flex items-center justify-between">
+                        <label for="autoLoadToggle" class="text-sm text-gray-300 cursor-pointer select-none">Load
+                            example on open</label>
+                        <button id="autoLoadToggle" onclick="toggleAutoLoad()"
+                            class="relative w-11 h-6 rounded-full transition cursor-pointer" role="switch">
+                            <span id="toggleDot"
+                                class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform shadow-sm"></span>
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2">When enabled, a sample README will be loaded automatically
+                        when you open this page.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Split View -->
+    <div class="flex flex-1 overflow-hidden">
+        <!-- Left: Editor -->
+        <div id="editor-panel" class="flex flex-col" style="width: 50%;">
+            <div class="px-4 py-2 bg-gray-900 border-b border-gray-800 flex items-center gap-2 flex-shrink-0">
+                <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" stroke-width="2"
+                    viewBox="0 0 24 24">
+                    <path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                </svg>
+                <span class="text-sm font-semibold text-gray-400">Raw Markdown</span>
+            </div>
+            <textarea id="editor" class="flex-1 w-full p-5" placeholder="Type your Markdown here..."
+                spellcheck="false"></textarea>
+        </div>
+        <!-- Draggable Divider -->
+        <div class="divider" id="divider"></div>
+        <!-- Right: Preview -->
+        <div id="preview-wrapper" class="flex flex-col flex-1 min-w-0">
+            <div class="px-4 py-2 bg-gray-900 border-b border-gray-800 flex items-center gap-2 flex-shrink-0">
+                <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" stroke-width="2"
+                    viewBox="0 0 24 24">
+                    <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path
+                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                <span class="text-sm font-semibold text-gray-400">Preview</span>
+            </div>
+            <div id="preview-panel" class="flex-1 overflow-y-auto p-6 bg-gray-800">
+                <div id="markdown-preview" class="markdown-body text-gray-200 max-w-none"></div>
+                <div id="placeholder" class="flex items-center justify-center h-full text-gray-600 text-lg">
+                    <span>プレビューがここに表示されます</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const editor = document.getElementById('editor');
+        const preview = document.getElementById('markdown-preview');
+        const placeholder = document.getElementById('placeholder');
+
+        // Default sample content — README for this Markdown Preview tool
+        const sampleMarkdown = `# Markdown Preview
+
+### Real-time Markdown Preview Tool
+
+---
+
+## English
+
+A simple browser-based Markdown preview tool with a split-view editor.
+
+- **Real-time preview**: See your Markdown rendered instantly as you type.
+- **Split view**: Editor on the left, preview on the right — with a draggable divider.
+- **Copy to clipboard**: One-click copy of your raw Markdown text.
+
+> **Tip:** You can write your README here, preview it, then copy and paste it directly into your GitHub repository.
+
+---
+
+## 日本語
+
+ブラウザ上で動作する、スプリットビュー型のMarkdownプレビューツールです。
+
+- **リアルタイムプレビュー**：入力と同時にMarkdownが即座にレンダリングされます。
+- **スプリットビュー**：左側にエディター、右側にプレビュー — 仕切りはドラッグで調整可能です。
+- **クリップボードにコピー**：ワンクリックでMarkdownテキストをコピーできます。
+
+> **ヒント：** ここでREADMEを作成し、プレビューを確認してから、そのままGitHubリポジトリに貼り付けることができます。
+`;
+
+        // --- Settings: auto-load example ---
+        let autoLoad = localStorage.getItem('md-autoload') !== 'false'; // default: true
+
+        function initSettings() {
+            updateToggleUI();
+            if (autoLoad) {
+                editor.value = sampleMarkdown;
+            }
+            renderPreview();
+        }
+
+        function updateToggleUI() {
+            const toggle = document.getElementById('autoLoadToggle');
+            const dot = document.getElementById('toggleDot');
+            if (autoLoad) {
+                toggle.classList.remove('bg-gray-600');
+                toggle.classList.add('bg-green-500');
+                dot.style.transform = 'translateX(20px)';
+            } else {
+                toggle.classList.remove('bg-green-500');
+                toggle.classList.add('bg-gray-600');
+                dot.style.transform = 'translateX(0)';
+            }
+        }
+
+        function toggleAutoLoad() {
+            autoLoad = !autoLoad;
+            localStorage.setItem('md-autoload', autoLoad);
+            updateToggleUI();
+        }
+
+        function toggleSettings() {
+            const dialog = document.getElementById('settingsDialog');
+            dialog.classList.toggle('hidden');
+        }
+
+        // Close settings when clicking outside
+        document.addEventListener('click', (e) => {
+            const dialog = document.getElementById('settingsDialog');
+            const btn = document.getElementById('settingsBtn');
+            if (!dialog.contains(e.target) && !btn.contains(e.target)) {
+                dialog.classList.add('hidden');
+            }
+        });
+
+        // Real-time preview
+        editor.addEventListener('input', renderPreview);
+
+        function renderPreview() {
+            const text = editor.value;
+            if (text.trim() === '') {
+                preview.innerHTML = '';
+                placeholder.classList.remove('hidden');
+            } else {
+                placeholder.classList.add('hidden');
+                preview.innerHTML = marked.parse(text);
+            }
+        }
+
+        // Tab support in textarea
+        editor.addEventListener('keydown', function (e) {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = this.selectionStart;
+                const end = this.selectionEnd;
+                this.value = this.value.substring(0, start) + '    ' + this.value.substring(end);
+                this.selectionStart = this.selectionEnd = start + 4;
+                renderPreview();
+            }
+        });
+
+        function copyMarkdown() {
+            const text = editor.value.trim();
+            if (!text) return;
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.getElementById('copyBtn');
+                const original = btn.innerHTML;
+                btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg> Copied!';
+                btn.classList.remove('bg-green-600', 'hover:bg-green-700');
+                btn.classList.add('bg-emerald-500');
+                setTimeout(() => {
+                    btn.innerHTML = original;
+                    btn.classList.remove('bg-emerald-500');
+                    btn.classList.add('bg-green-600', 'hover:bg-green-700');
+                }, 2000);
+            });
+        }
+
+        function clearEditor() {
+            editor.value = '';
+            renderPreview();
+            editor.focus();
+        }
+
+        // Draggable divider
+        const divider = document.getElementById('divider');
+        const editorPanel = document.getElementById('editor-panel');
+        let isDragging = false;
+
+        divider.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            divider.classList.add('active');
+            document.body.style.cursor = 'col-resize';
+            document.body.style.userSelect = 'none';
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            const container = editorPanel.parentElement;
+            const rect = container.getBoundingClientRect();
+            const offset = e.clientX - rect.left;
+            const percentage = (offset / rect.width) * 100;
+            const clamped = Math.max(20, Math.min(80, percentage));
+            editorPanel.style.width = clamped + '%';
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                divider.classList.remove('active');
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+            }
+        });
+
+        // Init
+        initSettings();
+    </script>
+</body>
+
+</html>
