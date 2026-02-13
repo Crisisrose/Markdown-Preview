@@ -143,7 +143,6 @@
             color: #4b5563;
         }
 
-        /* Custom scrollbar */
         #editor::-webkit-scrollbar,
         #preview-panel::-webkit-scrollbar {
             width: 8px;
@@ -165,7 +164,6 @@
             background: #4b5563;
         }
 
-        /* Divider drag handle */
         .divider {
             width: 6px;
             cursor: col-resize;
@@ -179,7 +177,6 @@
             background: #3b82f6;
         }
 
-        /* Settings dialog animation */
         .settings-dialog {
             animation: settingsFadeIn 0.15s ease-out;
         }
@@ -194,6 +191,55 @@
                 opacity: 1;
                 transform: translateY(0);
             }
+        }
+
+        /* Preview cursor (blinking caret) */
+        .preview-cursor {
+            display: inline;
+            position: relative;
+        }
+
+        .preview-cursor::after {
+            content: '';
+            display: inline-block;
+            width: 2px;
+            height: 1.15em;
+            background: #60a5fa;
+            vertical-align: text-bottom;
+            animation: cursorBlink 1s step-end infinite;
+            margin-left: -1px;
+            margin-right: -1px;
+        }
+
+        @keyframes cursorBlink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0;
+            }
+        }
+
+        /* Preview selection highlight */
+        .preview-selection {
+            background: rgba(96, 165, 250, 0.35);
+            border-radius: 2px;
+        }
+
+        /* Settings section titles */
+        .settings-section-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #9ca3af;
+            margin-bottom: 10px;
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid #374151;
         }
     </style>
 </head>
@@ -237,10 +283,13 @@
                 </button>
                 <!-- Settings dialog -->
                 <div id="settingsDialog"
-                    class="hidden settings-dialog absolute right-0 top-12 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl p-5 z-50 w-72">
+                    class="hidden settings-dialog absolute right-0 top-12 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl p-5 z-50 w-80">
+
+                    <!-- General section -->
+                    <div class="settings-section-title" style="margin-top:0;padding-top:0;border-top:none;">General
+                    </div>
                     <div class="flex items-center justify-between">
-                        <label for="autoLoadToggle" class="text-sm text-gray-300 cursor-pointer select-none">Load
-                            example on open</label>
+                        <label class="text-sm text-gray-300 cursor-pointer select-none">Load example on open</label>
                         <button id="autoLoadToggle" onclick="toggleAutoLoad()"
                             class="relative w-11 h-6 rounded-full transition cursor-pointer" role="switch">
                             <span id="toggleDot"
@@ -249,10 +298,36 @@
                     </div>
                     <p class="text-xs text-gray-500 mt-2">When enabled, a sample README will be loaded automatically
                         when you open this page.</p>
+
+                    <!-- Realtime Sync section -->
+                    <div class="settings-section-title">Realtime Sync</div>
+
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="text-sm text-gray-300 cursor-pointer select-none">Cursor sync</label>
+                        <button id="cursorSyncToggle" onclick="toggleCursorSync()"
+                            class="relative w-11 h-6 rounded-full transition cursor-pointer" role="switch">
+                            <span id="cursorSyncDot"
+                                class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform shadow-sm"></span>
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-500 mb-4">Show a blinking cursor in the preview that matches the editor
+                        cursor position.</p>
+
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="text-sm text-gray-300 cursor-pointer select-none">Selection sync</label>
+                        <button id="selectionSyncToggle" onclick="toggleSelectionSync()"
+                            class="relative w-11 h-6 rounded-full transition cursor-pointer" role="switch">
+                            <span id="selectionSyncDot"
+                                class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform shadow-sm"></span>
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-500">Highlight matching text in the preview when selecting in the
+                        editor.</p>
                 </div>
             </div>
         </div>
     </div>
+
     <!-- Split View -->
     <div class="flex flex-1 overflow-hidden">
         <!-- Left: Editor -->
@@ -262,7 +337,7 @@
                     viewBox="0 0 24 24">
                     <path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                 </svg>
-                <span class="text-sm font-semibold text-gray-400">Raw Markdown</span>
+                <span class="text-sm font-semibold text-gray-400">Markdown</span>
             </div>
             <textarea id="editor" class="flex-1 w-full p-5" placeholder="Type your Markdown here..."
                 spellcheck="false"></textarea>
@@ -283,17 +358,17 @@
             <div id="preview-panel" class="flex-1 overflow-y-auto p-6 bg-gray-800">
                 <div id="markdown-preview" class="markdown-body text-gray-200 max-w-none"></div>
                 <div id="placeholder" class="flex items-center justify-center h-full text-gray-600 text-lg">
-                    <span>プレビューがここに表示されます</span>
+                    <span>Preview will appear here</span>
                 </div>
             </div>
         </div>
     </div>
+
     <script>
         const editor = document.getElementById('editor');
         const preview = document.getElementById('markdown-preview');
         const placeholder = document.getElementById('placeholder');
 
-        // Default sample content — README for this Markdown Preview tool
         const sampleMarkdown = `# Markdown Preview
 
 ### Real-time Markdown Preview Tool
@@ -308,7 +383,7 @@ A simple browser-based Markdown preview tool with a split-view editor.
 - **Split view**: Editor on the left, preview on the right — with a draggable divider.
 - **Copy to clipboard**: One-click copy of your raw Markdown text.
 
-> **Tip:** You can write your README here, preview it, then copy and paste it directly into your GitHub repository.
+> **Tip:** You can write your Markdown here, preview it, then copy and paste it directly.
 
 ---
 
@@ -320,24 +395,18 @@ A simple browser-based Markdown preview tool with a split-view editor.
 - **スプリットビュー**：左側にエディター、右側にプレビュー — 仕切りはドラッグで調整可能です。
 - **クリップボードにコピー**：ワンクリックでMarkdownテキストをコピーできます。
 
-> **ヒント：** ここでREADMEを作成し、プレビューを確認してから、そのままGitHubリポジトリに貼り付けることができます。
-`;
+> **ヒント：** ここでMarkdownを作成し、プレビューを確認してから、そのまま貼り付けることができます。`;
 
-        // --- Settings: auto-load example ---
-        let autoLoad = localStorage.getItem('md-autoload') !== 'false'; // default: true
+        // ========== Settings State ==========
+        let autoLoad = localStorage.getItem('md-autoload') !== 'false';
+        let cursorSync = localStorage.getItem('md-cursor-sync') === 'true';
+        let selectionSync = localStorage.getItem('md-selection-sync') === 'true';
 
-        function initSettings() {
-            updateToggleUI();
-            if (autoLoad) {
-                editor.value = sampleMarkdown;
-            }
-            renderPreview();
-        }
-
-        function updateToggleUI() {
-            const toggle = document.getElementById('autoLoadToggle');
-            const dot = document.getElementById('toggleDot');
-            if (autoLoad) {
+        // ========== Toggle Helpers ==========
+        function updateToggleUI(btnId, dotId, value) {
+            const toggle = document.getElementById(btnId);
+            const dot = document.getElementById(dotId);
+            if (value) {
                 toggle.classList.remove('bg-gray-600');
                 toggle.classList.add('bg-green-500');
                 dot.style.transform = 'translateX(20px)';
@@ -351,15 +420,35 @@ A simple browser-based Markdown preview tool with a split-view editor.
         function toggleAutoLoad() {
             autoLoad = !autoLoad;
             localStorage.setItem('md-autoload', autoLoad);
-            updateToggleUI();
+            updateToggleUI('autoLoadToggle', 'toggleDot', autoLoad);
+        }
+
+        function toggleCursorSync() {
+            cursorSync = !cursorSync;
+            localStorage.setItem('md-cursor-sync', cursorSync);
+            updateToggleUI('cursorSyncToggle', 'cursorSyncDot', cursorSync);
+            if (!cursorSync && !selectionSync) {
+                renderPreview();
+            } else {
+                updateSyncOverlay();
+            }
+        }
+
+        function toggleSelectionSync() {
+            selectionSync = !selectionSync;
+            localStorage.setItem('md-selection-sync', selectionSync);
+            updateToggleUI('selectionSyncToggle', 'selectionSyncDot', selectionSync);
+            if (!selectionSync && !cursorSync) {
+                renderPreview();
+            } else {
+                updateSyncOverlay();
+            }
         }
 
         function toggleSettings() {
-            const dialog = document.getElementById('settingsDialog');
-            dialog.classList.toggle('hidden');
+            document.getElementById('settingsDialog').classList.toggle('hidden');
         }
 
-        // Close settings when clicking outside
         document.addEventListener('click', (e) => {
             const dialog = document.getElementById('settingsDialog');
             const btn = document.getElementById('settingsBtn');
@@ -368,8 +457,11 @@ A simple browser-based Markdown preview tool with a split-view editor.
             }
         });
 
-        // Real-time preview
-        editor.addEventListener('input', renderPreview);
+        // ========== Preview Render ==========
+        editor.addEventListener('input', () => {
+            renderPreview();
+            updateSyncOverlay();
+        });
 
         function renderPreview() {
             const text = editor.value;
@@ -382,7 +474,7 @@ A simple browser-based Markdown preview tool with a split-view editor.
             }
         }
 
-        // Tab support in textarea
+        // Tab support
         editor.addEventListener('keydown', function (e) {
             if (e.key === 'Tab') {
                 e.preventDefault();
@@ -417,7 +509,7 @@ A simple browser-based Markdown preview tool with a split-view editor.
             editor.focus();
         }
 
-        // Draggable divider
+        // ========== Draggable Divider ==========
         const divider = document.getElementById('divider');
         const editorPanel = document.getElementById('editor-panel');
         let isDragging = false;
@@ -436,8 +528,7 @@ A simple browser-based Markdown preview tool with a split-view editor.
             const rect = container.getBoundingClientRect();
             const offset = e.clientX - rect.left;
             const percentage = (offset / rect.width) * 100;
-            const clamped = Math.max(20, Math.min(80, percentage));
-            editorPanel.style.width = clamped + '%';
+            editorPanel.style.width = Math.max(20, Math.min(80, percentage)) + '%';
         });
 
         document.addEventListener('mouseup', () => {
@@ -449,7 +540,369 @@ A simple browser-based Markdown preview tool with a split-view editor.
             }
         });
 
-        // Init
+        // ============================================================
+        //  REALTIME SYNC ENGINE
+        //  Maps editor source positions <-> preview text node positions
+        // ============================================================
+
+        /**
+         * Walk all text nodes in the preview DOM
+         */
+        function getTextNodes(root) {
+            const nodes = [];
+            (function walk(node) {
+                if (node.nodeType === Node.TEXT_NODE && node.textContent.length > 0) {
+                    nodes.push(node);
+                } else {
+                    for (let i = 0; i < node.childNodes.length; i++) walk(node.childNodes[i]);
+                }
+            })(root);
+            return nodes;
+        }
+
+        /**
+         * Strip inline markdown syntax, returning visible text
+         */
+        function stripInline(text) {
+            text = text.replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1');
+            text = text.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1');
+            text = text.replace(/\*{3}([^*]+)\*{3}/g, '$1');
+            text = text.replace(/_{3}([^_]+)_{3}/g, '$1');
+            text = text.replace(/\*{2}([^*]+)\*{2}/g, '$1');
+            text = text.replace(/_{2}([^_]+)_{2}/g, '$1');
+            text = text.replace(/\*([^*]+)\*/g, '$1');
+            text = text.replace(/_([^_]+)_/g, '$1');
+            text = text.replace(/~~([^~]+)~~/g, '$1');
+            text = text.replace(/`([^`]+)`/g, '$1');
+            return text;
+        }
+
+        /**
+         * Get visible text for a single markdown line (strip block-level syntax)
+         */
+        function getLineVisibleText(line) {
+            let m;
+            if ((m = line.match(/^#{1,6}\s+(.*)/))) return stripInline(m[1]);
+            if (/^(\s*[-*_]\s*){3,}$/.test(line)) return '';
+            if ((m = line.match(/^\s*[-*+]\s+(.*)/))) return stripInline(m[1]);
+            if ((m = line.match(/^\s*\d+\.\s+(.*)/))) return stripInline(m[1]);
+            if ((m = line.match(/^>\s?(.*)/))) return stripInline(m[1]);
+            if (/^(`{3,}|~{3,})/.test(line)) return '';
+            if (line.trim() === '') return '';
+            return stripInline(line);
+        }
+
+        /**
+         * Build a char map: for each visible character in a line,
+         * return its offset within that line in the source.
+         */
+        function buildInlineCharMap(text, baseOffset, map) {
+            let i = 0;
+            while (i < text.length) {
+                const rest = text.substring(i);
+                let m;
+
+                // Image ![alt](url)
+                if ((m = rest.match(/^!\[([^\]]*)\]\([^)]*\)/))) {
+                    for (let j = 0; j < m[1].length; j++) map.push(baseOffset + i + 2 + j);
+                    i += m[0].length; continue;
+                }
+                // Link [text](url)
+                if ((m = rest.match(/^\[([^\]]*)\]\([^)]*\)/))) {
+                    for (let j = 0; j < m[1].length; j++) map.push(baseOffset + i + 1 + j);
+                    i += m[0].length; continue;
+                }
+                // ***bold italic***
+                if ((m = rest.match(/^\*{3}([^*]+)\*{3}/))) {
+                    for (let j = 0; j < m[1].length; j++) map.push(baseOffset + i + 3 + j);
+                    i += m[0].length; continue;
+                }
+                // **bold**
+                if ((m = rest.match(/^\*{2}([^*]+)\*{2}/))) {
+                    for (let j = 0; j < m[1].length; j++) map.push(baseOffset + i + 2 + j);
+                    i += m[0].length; continue;
+                }
+                // *italic*
+                if ((m = rest.match(/^\*([^*]+)\*/))) {
+                    for (let j = 0; j < m[1].length; j++) map.push(baseOffset + i + 1 + j);
+                    i += m[0].length; continue;
+                }
+                // ___bold italic___
+                if ((m = rest.match(/^_{3}([^_]+)_{3}/))) {
+                    for (let j = 0; j < m[1].length; j++) map.push(baseOffset + i + 3 + j);
+                    i += m[0].length; continue;
+                }
+                // __bold__
+                if ((m = rest.match(/^_{2}([^_]+)_{2}/))) {
+                    for (let j = 0; j < m[1].length; j++) map.push(baseOffset + i + 2 + j);
+                    i += m[0].length; continue;
+                }
+                // _italic_
+                if ((m = rest.match(/^_([^_]+)_/))) {
+                    for (let j = 0; j < m[1].length; j++) map.push(baseOffset + i + 1 + j);
+                    i += m[0].length; continue;
+                }
+                // ~~strike~~
+                if ((m = rest.match(/^~~([^~]+)~~/))) {
+                    for (let j = 0; j < m[1].length; j++) map.push(baseOffset + i + 2 + j);
+                    i += m[0].length; continue;
+                }
+                // `code`
+                if ((m = rest.match(/^`([^`]+)`/))) {
+                    for (let j = 0; j < m[1].length; j++) map.push(baseOffset + i + 1 + j);
+                    i += m[0].length; continue;
+                }
+                // Normal char
+                map.push(baseOffset + i);
+                i++;
+            }
+        }
+
+        function getLineCharMap(line) {
+            const map = [];
+            let m, contentStart = 0, content = line;
+
+            if ((m = line.match(/^(#{1,6}\s+)/))) { contentStart = m[1].length; content = line.substring(contentStart); }
+            else if ((m = line.match(/^(\s*[-*+]\s+)/))) { contentStart = m[1].length; content = line.substring(contentStart); }
+            else if ((m = line.match(/^(\s*\d+\.\s+)/))) { contentStart = m[1].length; content = line.substring(contentStart); }
+            else if ((m = line.match(/^(>\s?)/))) { contentStart = m[1].length; content = line.substring(contentStart); }
+
+            buildInlineCharMap(content, contentStart, map);
+            return map;
+        }
+
+        /**
+         * Build complete source-offset <-> preview-text-node mapping
+         */
+        function buildMappings(mdText) {
+            const mappings = []; // { srcIndex, node, offsetInNode }
+
+            const textNodes = getTextNodes(preview);
+            if (textNodes.length === 0) return mappings;
+
+            // Flatten all preview text chars with node references
+            const pChars = [];
+            for (const tn of textNodes) {
+                const t = tn.textContent;
+                for (let i = 0; i < t.length; i++) {
+                    pChars.push({ ch: t[i], node: tn, off: i });
+                }
+            }
+
+            const srcLines = mdText.split('\n');
+            let srcOffset = 0;
+            let pi = 0; // pointer into pChars
+            let inCodeBlock = false;
+
+            for (const line of srcLines) {
+                // Track fenced code blocks
+                if (/^(`{3,}|~{3,})/.test(line.trim())) {
+                    if (inCodeBlock) {
+                        inCodeBlock = false;
+                        srcOffset += line.length + 1;
+                        continue;
+                    } else {
+                        inCodeBlock = true;
+                        srcOffset += line.length + 1;
+                        continue;
+                    }
+                }
+
+                if (inCodeBlock) {
+                    // Inside code block: chars map 1:1 but line is literal
+                    const lineText = line;
+                    if (lineText.length > 0) {
+                        const matchStart = findSubstring(pChars, pi, lineText);
+                        if (matchStart !== -1) {
+                            for (let j = 0; j < lineText.length; j++) {
+                                mappings.push({
+                                    srcIndex: srcOffset + j,
+                                    node: pChars[matchStart + j].node,
+                                    offsetInNode: pChars[matchStart + j].off
+                                });
+                            }
+                            pi = matchStart + lineText.length;
+                        }
+                    }
+                    srcOffset += line.length + 1;
+                    continue;
+                }
+
+                const vis = getLineVisibleText(line);
+                if (vis.length === 0) {
+                    srcOffset += line.length + 1;
+                    continue;
+                }
+
+                const matchStart = findSubstring(pChars, pi, vis);
+                if (matchStart !== -1) {
+                    const charMap = getLineCharMap(line);
+                    for (let vi = 0; vi < vis.length && vi < charMap.length; vi++) {
+                        const pci = matchStart + vi;
+                        if (pci < pChars.length) {
+                            mappings.push({
+                                srcIndex: srcOffset + charMap[vi],
+                                node: pChars[pci].node,
+                                offsetInNode: pChars[pci].off
+                            });
+                        }
+                    }
+                    pi = matchStart + vis.length;
+                }
+
+                srcOffset += line.length + 1;
+            }
+
+            return mappings;
+        }
+
+        /**
+         * Find a substring within pChars starting from startIdx
+         */
+        function findSubstring(pChars, startIdx, text) {
+            if (text.length === 0) return -1;
+            const maxStart = pChars.length - text.length;
+            for (let i = startIdx; i <= maxStart; i++) {
+                let ok = true;
+                for (let j = 0; j < text.length; j++) {
+                    if (pChars[i + j].ch !== text[j]) { ok = false; break; }
+                }
+                if (ok) return i;
+            }
+            return -1;
+        }
+
+        // ========== Apply Cursor / Selection to Preview ==========
+
+        function updateSyncOverlay() {
+            if (!cursorSync && !selectionSync) return;
+
+            const text = editor.value;
+            if (text.trim() === '') return;
+
+            // Re-render fresh DOM
+            preview.innerHTML = marked.parse(text);
+
+            const mappings = buildMappings(text);
+            if (mappings.length === 0) return;
+
+            const selStart = editor.selectionStart;
+            const selEnd = editor.selectionEnd;
+
+            if (selectionSync && selStart !== selEnd) {
+                applySelection(mappings, selStart, selEnd);
+            } else if (cursorSync) {
+                applyCursor(mappings, selStart);
+            }
+        }
+
+        function applyCursor(mappings, cursorPos) {
+            // Find closest mapped position
+            let bestIdx = -1, bestDist = Infinity;
+            for (let i = 0; i < mappings.length; i++) {
+                const d = Math.abs(mappings[i].srcIndex - cursorPos);
+                if (d < bestDist) { bestDist = d; bestIdx = i; }
+            }
+            // Only show if cursor is very close to a visible char (within 3 chars)
+            if (bestIdx === -1 || bestDist > 3) return;
+
+            const { node, offsetInNode } = mappings[bestIdx];
+            // Determine if cursor is before or after this char
+            const isAfter = mappings[bestIdx].srcIndex < cursorPos;
+            const insertOffset = isAfter ? offsetInNode + 1 : offsetInNode;
+
+            insertCursorAt(node, insertOffset);
+        }
+
+        function insertCursorAt(textNode, offset) {
+            const text = textNode.textContent;
+            const clampedOffset = Math.min(offset, text.length);
+            const before = text.substring(0, clampedOffset);
+            const after = text.substring(clampedOffset);
+            const parent = textNode.parentNode;
+
+            const frag = document.createDocumentFragment();
+            if (before) frag.appendChild(document.createTextNode(before));
+
+            const cursorEl = document.createElement('span');
+            cursorEl.className = 'preview-cursor';
+            frag.appendChild(cursorEl);
+
+            if (after) frag.appendChild(document.createTextNode(after));
+            parent.replaceChild(frag, textNode);
+        }
+
+        function applySelection(mappings, selStart, selEnd) {
+            const selected = mappings.filter(m => m.srcIndex >= selStart && m.srcIndex < selEnd);
+            if (selected.length === 0) return;
+
+            // Group by text node
+            const groups = new Map();
+            for (const m of selected) {
+                if (!groups.has(m.node)) groups.set(m.node, []);
+                groups.get(m.node).push(m.offsetInNode);
+            }
+
+            // Process in reverse order to avoid DOM invalidation
+            const entries = Array.from(groups.entries()).reverse();
+
+            for (const [node, offsets] of entries) {
+                if (!node.parentNode) continue;
+                offsets.sort((a, b) => a - b);
+
+                // Build contiguous ranges
+                const ranges = [];
+                let rs = offsets[0], re = offsets[0];
+                for (let i = 1; i < offsets.length; i++) {
+                    if (offsets[i] === re + 1) { re = offsets[i]; }
+                    else { ranges.push([rs, re]); rs = offsets[i]; re = offsets[i]; }
+                }
+                ranges.push([rs, re]);
+
+                const text = node.textContent;
+                const parent = node.parentNode;
+                const frag = document.createDocumentFragment();
+                let lastEnd = 0;
+
+                for (const [s, e] of ranges) {
+                    if (s > lastEnd) frag.appendChild(document.createTextNode(text.substring(lastEnd, s)));
+                    const span = document.createElement('span');
+                    span.className = 'preview-selection';
+                    span.textContent = text.substring(s, e + 1);
+                    frag.appendChild(span);
+                    lastEnd = e + 1;
+                }
+                if (lastEnd < text.length) frag.appendChild(document.createTextNode(text.substring(lastEnd)));
+
+                parent.replaceChild(frag, node);
+            }
+        }
+
+        // ========== Editor Events for Sync ==========
+        let syncRAF = null;
+        function scheduleSyncUpdate() {
+            if (syncRAF) cancelAnimationFrame(syncRAF);
+            syncRAF = requestAnimationFrame(updateSyncOverlay);
+        }
+
+        editor.addEventListener('mouseup', scheduleSyncUpdate);
+        editor.addEventListener('click', scheduleSyncUpdate);
+        editor.addEventListener('select', scheduleSyncUpdate);
+        editor.addEventListener('keyup', (e) => {
+            if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown'].includes(e.key) || e.shiftKey) {
+                scheduleSyncUpdate();
+            }
+        });
+
+        // ========== Init ==========
+        function initSettings() {
+            updateToggleUI('autoLoadToggle', 'toggleDot', autoLoad);
+            updateToggleUI('cursorSyncToggle', 'cursorSyncDot', cursorSync);
+            updateToggleUI('selectionSyncToggle', 'selectionSyncDot', selectionSync);
+            if (autoLoad) editor.value = sampleMarkdown;
+            renderPreview();
+        }
+
         initSettings();
     </script>
 </body>
