@@ -241,6 +241,122 @@
             padding-top: 12px;
             border-top: 1px solid #374151;
         }
+
+        /* === Added for font & color controls === */
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .color-palette {
+            display: flex;
+            gap: 7px;
+        }
+
+        .color-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 9999px;
+            cursor: pointer;
+            border: 2px solid #374151;
+            transition: all 0.15s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        .color-dot.active {
+            border-color: #60a5fa;
+            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.25);
+            transform: scale(1.08);
+        }
+
+        .color-dot.green {
+            background-color: #86efac;
+        }
+
+        .color-dot.white {
+            background-color: #e5e7eb;
+        }
+
+        .preview-font-control {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: #9ca3af;
+        }
+
+        .preview-font-control input[type="range"] {
+            accent-color: #60a5fa;
+            width: 110px;
+        }
+
+        .preview-font-control input[type="number"] {
+            width: 52px;
+            background: #1e293b;
+            border: 1px solid #475569;
+            color: #e2e8f0;
+            text-align: center;
+            font-family: monospace;
+            font-size: 13px;
+            padding: 3px 0;
+            border-radius: 6px;
+        }
+
+        .preview-font-control button {
+            width: 22px;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #334155;
+            color: #cbd5e1;
+            border-radius: 9999px;
+            font-size: 15px;
+            line-height: 1;
+            transition: all 0.1s;
+        }
+
+        .preview-font-control button:hover {
+            background: #475569;
+            color: white;
+        }
+
+        /* ===== フォントサイズ入力の垂直中央揃え完全修正 ===== */
+        #editorFontInput,
+        .preview-font-control input[type="number"] {
+            height: 26px !important;
+            /* ボタンと同じ高さ */
+            line-height: 1 !important;
+            /* これが一番大事 */
+            padding: 0 6px !important;
+            /* 上下0、左右だけ余白 */
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            vertical-align: middle;
+            box-sizing: border-box;
+            font-variant-numeric: tabular-nums;
+            /* ← これ大事！数字を等幅に */
+            width: 56px !important;
+            /* 固定幅（4文字分ちょうど） */
+            text-align: center;
+        }
+
+        /* ボタンも同じ高さに揃えて統一感を出す（任意だけどおすすめ） */
+        .preview-font-control button,
+        #editor-panel .flex.items-center button {
+            height: 26px;
+            line-height: 1;
+        }
+
+        /* ================== ここが今回の修正 ================== */
+        /* 上下スピナー矢印（デフォルトの↑↓）を完全に非表示 */
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
     </style>
 </head>
 
@@ -332,12 +448,36 @@
     <div class="flex flex-1 overflow-hidden">
         <!-- Left: Editor -->
         <div id="editor-panel" class="flex flex-col" style="width: 50%;">
-            <div class="px-4 py-2 bg-gray-900 border-b border-gray-800 flex items-center gap-2 flex-shrink-0">
-                <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" stroke-width="2"
-                    viewBox="0 0 24 24">
-                    <path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                </svg>
-                <span class="text-sm font-semibold text-gray-400">Markdown</span>
+            <div class="px-4 py-2 bg-gray-900 border-b border-gray-800 flex items-center justify-between flex-shrink-0">
+                <div class="flex items-center gap-2">
+                    <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" stroke-width="2"
+                        viewBox="0 0 24 24">
+                        <path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                    </svg>
+                    <span class="text-sm font-semibold text-gray-400">Markdown</span>
+                </div>
+
+                <!-- Color palette + Font size for Editor -->
+                <div class="header-controls">
+                    <!-- Color palette -->
+                    <div class="color-palette">
+                        <div id="color-green" onclick="setMarkdownColor('#86efac')" class="color-dot green active">
+                        </div>
+                        <div id="color-white" onclick="setMarkdownColor('#e5e7eb')" class="color-dot white"></div>
+                    </div>
+
+                    <!-- Font size control for Markdown -->
+                    <div class="flex items-center gap-1 text-xs">
+                        <button onclick="changeEditorFontSize(-1)"
+                            class="w-6 h-6 flex items-center justify-center bg-gray-700 hover:bg-gray-600 rounded-lg text-gray-300">-</button>
+                        <input id="editorFontInput" type="number" value="14" min="10" max="26" step="1"
+                            class="w-12 bg-gray-800 border border-gray-600 text-center text-white font-mono rounded-lg focus:outline-none focus:border-blue-500"
+                            onchange="applyEditorFontSize()">
+                        <button onclick="changeEditorFontSize(1)"
+                            class="w-6 h-6 flex items-center justify-center bg-gray-700 hover:bg-gray-600 rounded-lg text-gray-300">+</button>
+                        <span class="text-gray-500 ml-0.5">px</span>
+                    </div>
+                </div>
             </div>
             <textarea id="editor" class="flex-1 w-full p-5" placeholder="Type your Markdown here..."
                 spellcheck="false"></textarea>
@@ -346,14 +486,28 @@
         <div class="divider" id="divider"></div>
         <!-- Right: Preview -->
         <div id="preview-wrapper" class="flex flex-col flex-1 min-w-0">
-            <div class="px-4 py-2 bg-gray-900 border-b border-gray-800 flex items-center gap-2 flex-shrink-0">
-                <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" stroke-width="2"
-                    viewBox="0 0 24 24">
-                    <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path
-                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-                <span class="text-sm font-semibold text-gray-400">Preview</span>
+            <div class="px-4 py-2 bg-gray-900 border-b border-gray-800 flex items-center justify-between flex-shrink-0">
+                <div class="flex items-center gap-2">
+                    <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" stroke-width="2"
+                        viewBox="0 0 24 24">
+                        <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path
+                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    <span class="text-sm font-semibold text-gray-400">Preview</span>
+                </div>
+
+                <!-- Font size slider for Preview only -->
+                <div class="preview-font-control">
+                    <span class="font-medium tracking-widest">SIZE</span>
+                    <button onclick="changePreviewFontSize(-0.5)">−</button>
+                    <input id="previewFontSlider" type="range" min="12" max="28" step="0.5" value="16"
+                        oninput="applyPreviewFontSize(this.value)">
+                    <input id="previewFontInput" type="number" value="16" min="12" max="28" step="0.5"
+                        class="text-center" onchange="applyPreviewFontSize(this.value)">
+                    <button onclick="changePreviewFontSize(0.5)">+</button>
+                    <span class="text-[10px] text-gray-500 font-mono">px</span>
+                </div>
             </div>
             <div id="preview-panel" class="flex-1 overflow-y-auto p-6 bg-gray-800">
                 <div id="markdown-preview" class="markdown-body text-gray-200 max-w-none"></div>
@@ -894,6 +1048,77 @@ A simple browser-based Markdown preview tool with a split-view editor.
             }
         });
 
+        // ========== Font & Color Controls ==========
+        let editorFontSize = 14;
+        let previewFontSize = 16;
+        let currentMarkdownColor = '#86efac';
+
+        function applyEditorFontSize() {
+            editorFontSize = parseFloat(document.getElementById('editorFontInput').value) || 14;
+            editor.style.fontSize = editorFontSize + 'px';
+            localStorage.setItem('editorFontSize', editorFontSize);
+        }
+
+        function changeEditorFontSize(delta) {
+            editorFontSize = Math.max(10, Math.min(26, editorFontSize + delta));
+            document.getElementById('editorFontInput').value = editorFontSize;
+            applyEditorFontSize();
+        }
+
+        // applyPreviewFontSize関数をこう書き換え
+        function applyPreviewFontSize(val) {
+            previewFontSize = parseFloat(val) || 16;
+            previewFontSize = Math.max(12, Math.min(28, previewFontSize));
+
+            // ★★★ ここが肝 ★★★
+            const displayVal = previewFontSize.toFixed(1);   // 常に「XX.X」形式
+
+            document.getElementById('previewFontInput').value = displayVal;
+            document.getElementById('previewFontSlider').value = previewFontSize;
+
+            document.getElementById('markdown-preview').style.fontSize = previewFontSize + 'px';
+            localStorage.setItem('previewFontSize', previewFontSize);
+        }
+
+        // changePreviewFontSizeも同様に
+        function changePreviewFontSize(delta) {
+            let newVal = previewFontSize + delta;
+            applyPreviewFontSize(newVal);
+        }
+
+        function setMarkdownColor(color) {
+            currentMarkdownColor = color;
+            editor.style.color = color;
+
+            // Active ring
+            document.getElementById('color-green').classList.toggle('active', color === '#86efac');
+            document.getElementById('color-white').classList.toggle('active', color === '#e5e7eb');
+
+            localStorage.setItem('markdownColor', color);
+        }
+
+        // Load saved settings
+        function loadSavedFontAndColor() {
+            const savedEditorSize = localStorage.getItem('editorFontSize');
+            if (savedEditorSize) {
+                editorFontSize = parseFloat(savedEditorSize);
+                document.getElementById('editorFontInput').value = editorFontSize;
+            }
+            const savedPreviewSize = localStorage.getItem('previewFontSize');
+            if (savedPreviewSize) {
+                previewFontSize = parseFloat(savedPreviewSize);
+                document.getElementById('previewFontInput').value = previewFontSize;
+                document.getElementById('previewFontSlider').value = previewFontSize;
+            }
+            const savedColor = localStorage.getItem('markdownColor');
+            if (savedColor) {
+                currentMarkdownColor = savedColor;
+                editor.style.color = savedColor;
+                document.getElementById('color-green').classList.toggle('active', savedColor === '#86efac');
+                document.getElementById('color-white').classList.toggle('active', savedColor === '#e5e7eb');
+            }
+        }
+
         // ========== Init ==========
         function initSettings() {
             updateToggleUI('autoLoadToggle', 'toggleDot', autoLoad);
@@ -901,6 +1126,12 @@ A simple browser-based Markdown preview tool with a split-view editor.
             updateToggleUI('selectionSyncToggle', 'selectionSyncDot', selectionSync);
             if (autoLoad) editor.value = sampleMarkdown;
             renderPreview();
+
+            // New: load custom font & color
+            loadSavedFontAndColor();
+            editor.style.fontSize = editorFontSize + 'px';
+            editor.style.color = currentMarkdownColor;
+            document.getElementById('markdown-preview').style.fontSize = previewFontSize + 'px';
         }
 
         initSettings();
