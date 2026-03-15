@@ -624,7 +624,7 @@ A simple browser-based Markdown preview tool with a split-view editor.
                 placeholder.classList.remove('hidden');
             } else {
                 placeholder.classList.add('hidden');
-                preview.innerHTML = marked.parse(text);
+                preview.innerHTML = marked.parse(text, { breaks: true });
             }
         }
 
