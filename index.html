@@ -5,8 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Markdown Preview</title>
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <link href="./output.css" rel="stylesheet">
+    <link href="/src/style.css" rel="stylesheet">
+    <script type="text/javascript" src="/js/purify.min.js"></script>
+    <script type="text/javascript" src="/js/marked.umd.js"></script>
+    <script>
+        marked.setOptions({ gfm: true, breaks: true });
+    </script>
     
 </head>
 
@@ -274,7 +278,7 @@ A simple browser-based Markdown preview tool with a split-view editor.
                 placeholder.classList.remove('hidden');
             } else {
                 placeholder.classList.add('hidden');
-                preview.innerHTML = marked.parse(text, { breaks: true });
+                   preview.innerHTML = DOMPurify.sanitize(marked.parse(text));
             }
         }
 
@@ -585,7 +589,8 @@ A simple browser-based Markdown preview tool with a split-view editor.
             if (text.trim() === '') return;
 
             // Re-render fresh DOM
-            preview.innerHTML = marked.parse(text);
+            preview.innerHTML = DOMPurify.sanitize(marked.parse(text)
+);
 
             const mappings = buildMappings(text);
             if (mappings.length === 0) return;
