@@ -44,7 +44,7 @@
 
 <body class="bg-gray-950 text-gray-100 h-screen flex flex-col overflow-hidden">
     <!-- Header -->
-    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-800 flex-shrink-0">
+    <header class="flex items-center justify-between px-6 py-4 border-b border-gray-800 flex-shrink-0">
         <h1 class="text-2xl font-bold text-white flex items-center gap-2">
             <svg class="w-7 h-7 text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path
@@ -71,7 +71,7 @@
             </button>
             <!-- Settings -->
             <div class="relative">
-                <button id="settingsBtn" onclick="toggleSettings()"
+                <button id="settingsBtn" onclick="toggleSettings()" aria-label="設定" aria-haspopup="dialog" aria-expanded="false" aria-controls="settingsDialog"
                     class="text-gray-400 hover:text-white transition cursor-pointer p-2 rounded-lg hover:bg-gray-800">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path
@@ -124,10 +124,10 @@
                 </div>
             </div>
         </div>
-    </div>
+    </header>
 
     <!-- Split View -->
-    <div class="flex flex-1 overflow-hidden">
+    <main class="flex flex-1 overflow-hidden" id="main-content">
         <!-- Left: Editor -->
         <div id="editor-panel" class="flex flex-col" style="width: 50%;">
             <div class="px-4 py-2 bg-gray-900 border-b border-gray-800 flex items-center justify-between flex-shrink-0">
@@ -152,7 +152,7 @@
                     <div class="flex items-center gap-1 text-xs">
                         <button onclick="changeEditorFontSize(-1)"
                             class="w-6 h-6 flex items-center justify-center bg-gray-700 hover:bg-gray-600 rounded-lg text-gray-300">-</button>
-                        <input id="editorFontInput" type="number" value="14" min="10" max="26" step="1"
+                        <input id="editorFontInput" type="number" aria-label="Markdownエディタのフォントサイズ" value="14" min="10" max="26" step="1"
                             class="w-12 bg-gray-800 border border-gray-600 text-center text-white font-mono rounded-lg focus:outline-none focus:border-blue-500"
                             onchange="applyEditorFontSize()">
                         <button onclick="changeEditorFontSize(1)"
@@ -183,9 +183,9 @@
                 <div class="preview-font-control">
                     <span class="font-medium tracking-widest">SIZE</span>
                     <button onclick="changePreviewFontSize(-0.5)">−</button>
-                    <input id="previewFontSlider" type="range" min="12" max="28" step="0.5" value="16"
+                    <input id="previewFontSlider" type="range" aria-label="プレビューのフォントサイズ" min="12" max="28" step="0.5" value="16"
                         oninput="applyPreviewFontSize(this.value)">
-                    <input id="previewFontInput" type="number" value="16" min="12" max="28" step="0.5"
+                    <input id="previewFontInput" type="number" aria-label="プレビューのフォントサイズ（数値）" value="16" min="12" max="28" step="0.5"
                         class="text-center" onchange="applyPreviewFontSize(this.value)">
                     <button onclick="changePreviewFontSize(0.5)">+</button>
                     <span class="text-[10px] text-gray-500 font-mono">px</span>
@@ -198,7 +198,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </main>
 
     <script>
         const editor = document.getElementById('editor');
@@ -282,7 +282,10 @@ A simple browser-based Markdown preview tool with a split-view editor.
         }
 
         function toggleSettings() {
-            document.getElementById('settingsDialog').classList.toggle('hidden');
+            const dialog = document.getElementById('settingsDialog');
+            const btn = document.getElementById('settingsBtn');
+            const isHidden = dialog.classList.toggle('hidden');
+            btn.setAttribute('aria-expanded', String(!isHidden));
         }
 
         document.addEventListener('click', (e) => {
