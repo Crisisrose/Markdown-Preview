@@ -5,11 +5,39 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Markdown Preview</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2360a5fa' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z'/%3E%3C/svg%3E">
     <link href="/src/style.css" rel="stylesheet">
-    <script type="text/javascript" src="/js/purify.min.js"></script>
-    <script type="text/javascript" src="/js/marked.umd.js"></script>
     <script>
-        marked.setOptions({ gfm: true, breaks: true });
+  (function(){
+    const autoLoad = localStorage.getItem('md-autoload') !== 'false';
+    window._markdownReady = false;
+    function loadLibs(cb){
+      if(window.marked && window.DOMPurify){ window._markdownReady=true; if(cb) cb(); return; }
+      const s1=document.createElement('script');
+      s1.src='/js/purify.min.js';
+      s1.onload=()=>{
+        const s2=document.createElement('script');
+        s2.src='/js/marked.umd.js';
+        s2.onload=()=>{ marked.setOptions({gfm:true,breaks:true}); window._markdownReady=true; if(cb) cb(); };
+        document.head.appendChild(s2);
+      };
+      document.head.appendChild(s1);
+    }
+    window.loadMarkdownLibs = loadLibs;
+    if(autoLoad){
+      document.write('<script src="/js/purify.min.js"><\/script>');
+      document.write('<script src="/js/marked.umd.js"><\/script>');
+      document.write('<script>marked.setOptions({gfm:true,breaks:true});window._markdownReady=true;<\/script>');
+    }else{
+      // Defer loading to avoid render-blocking for users who disabled auto-load
+      const deferLoad = () => (window.requestIdleCallback ? requestIdleCallback(()=>loadLibs()) : setTimeout(()=>loadLibs(), 1));
+      if(document.readyState==='loading'){
+        document.addEventListener('DOMContentLoaded', deferLoad);
+      }else{
+        deferLoad();
+      }
+    }
+  })();
     </script>
     
 </head>
@@ -276,10 +304,15 @@ A simple browser-based Markdown preview tool with a split-view editor.
             if (text.trim() === '') {
                 preview.innerHTML = '';
                 placeholder.classList.remove('hidden');
-            } else {
-                placeholder.classList.add('hidden');
-                   preview.innerHTML = DOMPurify.sanitize(marked.parse(text));
+                return;
             }
+            placeholder.classList.add('hidden');
+            if (!window._markdownReady) {
+                window.loadMarkdownLibs(renderPreview);
+                preview.innerHTML = '<div class="text-gray-500 text-sm">Loading preview...</div>';
+                return;
+            }
+            preview.innerHTML = DOMPurify.sanitize(marked.parse(text));
         }
 
         // Tab support
