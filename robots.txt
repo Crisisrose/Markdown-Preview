@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://markdown-preview-9pv.pages.dev/sitemap.xml
