@@ -12,8 +12,7 @@
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://markdown-preview-9pv.pages.dev/">
     <meta name="twitter:card" content="summary">
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2360a5fa' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z'/%3E%3C/svg%3E">
-    <style>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2360a5fa' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z'/%3E%3C/svg%3E"><style>
         /*! tailwindcss v4.3.0 | MIT License | https://tailwindcss.com */
 @layer properties;
 @layer theme, base, components, utilities;
@@ -980,38 +979,19 @@
   }
 }
     </style>
-    <script>
-  (function(){
-    const autoLoad = localStorage.getItem('md-autoload') !== 'false';
-    window._markdownReady = false;
-    function loadLibs(cb){
-      if(window.marked && window.DOMPurify){ window._markdownReady=true; if(cb) cb(); return; }
-      const s1=document.createElement('script');
-      s1.src='/js/purify.min.js';
-      s1.onload=()=>{
-        const s2=document.createElement('script');
-        s2.src='/js/marked.umd.js';
-        s2.onload=()=>{ marked.setOptions({gfm:true,breaks:true}); window._markdownReady=true; if(cb) cb(); };
-        document.head.appendChild(s2);
-      };
-      document.head.appendChild(s1);
-    }
-    window.loadMarkdownLibs = loadLibs;
-    if(autoLoad){
-      document.write('<script src="/js/purify.min.js"><\/script>');
-      document.write('<script src="/js/marked.umd.js"><\/script>');
-      document.write('<script>marked.setOptions({gfm:true,breaks:true});window._markdownReady=true;<\/script>');
-    }else{
-      // Defer loading to avoid render-blocking for users who disabled auto-load
-      const deferLoad = () => (window.requestIdleCallback ? requestIdleCallback(()=>loadLibs()) : setTimeout(()=>loadLibs(), 1));
-      if(document.readyState==='loading'){
-        document.addEventListener('DOMContentLoaded', deferLoad);
-      }else{
-        deferLoad();
-      }
-    }
-  })();
+    <link rel="preload" as="script" href="/js/purify.min.js">
+    <link rel="preload" as="script" href="/js/marked.umd.js">
+    <script src="/js/purify.min.js" defer></script>
+    <script src="/js/marked.umd.js" defer></script>
+    <script defer>
+      document.addEventListener('DOMContentLoaded', () => {
+        if (window.marked) {
+          marked.setOptions({gfm:true, breaks:true});
+          window._markdownReady = true;
+        }
+      });
     </script>
+    
     
 </head>
 
@@ -1177,36 +1157,8 @@
         const editor = document.getElementById('editor');
         const preview = document.getElementById('markdown-preview');
         const placeholder = document.getElementById('placeholder');
-
-        const sampleMarkdown = `# Markdown Preview
-
-### Real-time Markdown Preview Tool
-
----
-
-## English
-
-A simple browser-based Markdown preview tool with a split-view editor.
-
-- **Real-time preview**: See your Markdown rendered instantly as you type.
-- **Split view**: Editor on the left, preview on the right — with a draggable divider.
-- **Copy to clipboard**: One-click copy of your raw Markdown text.
-
-> **Tip:** You can write your Markdown here, preview it, then copy and paste it directly.
-
----
-
-## 日本語
-
-ブラウザ上で動作する、スプリットビュー型のMarkdownプレビューツールです。
-
-- **リアルタイムプレビュー**：入力と同時にMarkdownが即座にレンダリングされます。
-- **スプリットビュー**：左側にエディター、右側にプレビュー — 仕切りはドラッグで調整可能です。
-- **クリップボードにコピー**：ワンクリックでMarkdownテキストをコピーできます。
-
-> **ヒント：** ここでMarkdownを作成し、プレビューを確認してから、そのまま貼り付けることができます。`;
-
-        // ========== Settings State ==========
+        // sampleMarkdownは外部ファイル /sample.md に分離
+// ========== Settings State ==========
         let autoLoad = localStorage.getItem('md-autoload') !== 'false';
         let cursorSync = localStorage.getItem('md-cursor-sync') === 'true';
         let selectionSync = localStorage.getItem('md-selection-sync') === 'true';
@@ -1784,11 +1736,19 @@ A simple browser-based Markdown preview tool with a split-view editor.
         }
 
         // ========== Init ==========
-        function initSettings() {
+        async function initSettings() {
             updateToggleUI('autoLoadToggle', 'toggleDot', autoLoad);
             updateToggleUI('cursorSyncToggle', 'cursorSyncDot', cursorSync);
             updateToggleUI('selectionSyncToggle', 'selectionSyncDot', selectionSync);
-            if (autoLoad) editor.value = sampleMarkdown;
+            if (autoLoad) {
+                try {
+                    const res = await fetch('/sample.md', {cache: 'force-cache'});
+                    editor.value = await res.text();
+                } catch(e) {
+                    console.error('sample.md load failed', e);
+                    editor.value = '';
+                }
+            }
             renderPreview();
 
             // New: load custom font & color
